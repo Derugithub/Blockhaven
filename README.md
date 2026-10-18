@@ -32,7 +32,7 @@ There is no account, no custom backend, and no cloud sync. Worlds are saved in a
 - Autosave every 30 seconds, when the app goes to the background, when you die, and when you leave a world
 - Pause menu, inventory and crafting screen, quest list, settings, and a hint toggle
 - Pixel-art blocks and items drawn from code at startup. There are no external textures
-- Ads from Google AdMob after UMP consent: a banner on the world list, an optional rewarded ad (revive in place, or a bonus bundle once every 10 minutes), and a frequency-capped interstitial when you return to the menu. Play never waits on an ad
+- Ads from Google AdMob after UMP consent: a banner on the world list, an optional rewarded ad (revive in place, or a bonus bundle of 8 torches, 16 planks, 8 sticks, 3 apples and a berry pie once every 10 minutes, from the pause menu), and a frequency-capped interstitial when you return to the menu. Play never waits on an ad
 
 ## Requirements
 
@@ -180,7 +180,7 @@ Save format v2 adds difficulty, hunger, quest progress, stats and the win flag. 
 | --- | --- | --- |
 | `menu_banner` | Anchored adaptive banner under the world list | Never on the game screen |
 | `return_interstitial` | When you save and quit to the menu | Not in the first 3 minutes of a session, only after 2 minutes of play, at least 4 minutes apart, at most 4 per session |
-| `game_rewarded` | Revive in place after a fall, or a bonus bundle (8 torches, 16 planks, 8 sticks) from the pause menu | Optional. The bonus can be claimed once every 10 minutes |
+| `game_rewarded` | Revive in place after dying, or a bonus bundle (8 torches, 16 planks, 8 sticks, 3 apples, 1 berry pie) from the pause menu | Optional. The bonus can be claimed once every 10 minutes |
 
 During closed testing every build, production included, uses Google's test units (`TestIds`). The real unit IDs are switched off in `src/lib/ads/production-unit-ids.js` with `const PRODUCTION_UNIT_IDS = null;`.
 

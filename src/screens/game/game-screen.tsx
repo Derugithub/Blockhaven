@@ -161,6 +161,15 @@ function nearestFire(game: GameState): number {
   return best;
 }
 
+/** What the optional rewarded ad gives, once every 10 minutes: building supplies, light and food. */
+const BONUS_ITEMS = [
+  { item: Item.Torch, count: 8 },
+  { item: Item.Planks, count: 16 },
+  { item: Item.Stick, count: 8 },
+  { item: Item.Apple, count: 3 },
+  { item: Item.BerryPie, count: 1 },
+];
+
 /** Module-level so the bonus cooldown survives leaving and re-entering a world in one session. */
 let bonusClaimedAt: number | null = null;
 
@@ -572,11 +581,11 @@ export function GameScreen({
     }
     bonusClaimedAt = Date.now();
     const game = gameRef.current;
-    addItem(game.inventory, Item.Torch, 8);
-    addItem(game.inventory, Item.Planks, 16);
-    addItem(game.inventory, Item.Stick, 8);
+    let lost = 0;
+    for (const reward of BONUS_ITEMS) lost += addItem(game.inventory, reward.item, reward.count);
     game.hudVersion++;
-    showToast('Bonus: 8 torches, 16 planks, 8 sticks');
+    sounds.play('pickup', 0.8);
+    showToast(`Bonus: ${rewardLabel(BONUS_ITEMS, itemName)}${lost > 0 ? ' (bag full, some items lost)' : ''}`);
   }, [ads, showToast]);
 
   const reviveWithAd = useCallback(async () => {
