@@ -106,7 +106,14 @@ export default function WorldsScreen() {
                   {item.name}
                 </AppText>
                 <AppText variant="meta" color={Colors.muted} numberOfLines={1}>
-                  {`Seed ${item.seedText} · played ${timeAgo(item.updatedAt)}`}
+                  {[
+                    `Seed ${item.seedText}`,
+                    item.difficulty === 'peaceful' ? 'Peaceful' : null,
+                    item.won ? 'Beacon built' : null,
+                    `played ${timeAgo(item.updatedAt)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </AppText>
               </View>
               <IconButton icon="trash-outline" label={`Delete ${item.name}`} onPress={() => confirmDelete(item)} />

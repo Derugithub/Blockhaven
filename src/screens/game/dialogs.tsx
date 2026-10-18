@@ -30,6 +30,7 @@ export function PauseMenu({
   saving,
   onResume,
   onInventory,
+  onQuests,
   onBonus,
   onControlsSize,
   onQuit,
@@ -42,6 +43,7 @@ export function PauseMenu({
   saving: boolean;
   onResume: () => void;
   onInventory: () => void;
+  onQuests: () => void;
   onBonus: () => void;
   onControlsSize: (size: ControlsSize) => void;
   onQuit: () => void;
@@ -55,6 +57,7 @@ export function PauseMenu({
       <View style={styles.stack}>
         <Button label="Resume" icon="play" onPress={onResume} />
         <Button label="Inventory & crafting" icon="cube-outline" kind="secondary" onPress={onInventory} />
+        <Button label="Quests" icon="trophy-outline" kind="secondary" onPress={onQuests} />
         <Button label={bonusLabel} icon="gift-outline" kind="secondary" disabled={!bonusEnabled} onPress={onBonus} />
         <View>
           <AppText variant="label" color={Colors.muted} style={styles.label}>

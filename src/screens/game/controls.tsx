@@ -3,6 +3,8 @@ import { useMemo, type ComponentProps, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
+import { PulseRing } from './hud';
+
 /**
  * A button that reports press and release. Each button tracks its own finger, so walking and
  * jumping (and mining with a third finger) work at the same time.
@@ -13,12 +15,15 @@ export function HoldButton({
   size,
   onChange,
   style,
+  highlighted = false,
 }: {
   icon: ComponentProps<typeof Ionicons>['name'];
   label: string;
   size: number;
   onChange: (pressed: boolean) => void;
   style?: StyleProp<ViewStyle>;
+  /** Pulsing ring, used by the tutorial to point at this button. */
+  highlighted?: boolean;
 }) {
   const gesture = useMemo(
     () =>
@@ -48,6 +53,7 @@ export function HoldButton({
         accessibilityLabel={label}
         style={[styles.button, { width: size, height: size, borderRadius: size * 0.28 }, style]}>
         <Ionicons name={icon} size={size * 0.46} color="rgba(255,255,255,0.92)" />
+        {highlighted ? <PulseRing radius={size * 0.32} /> : null}
       </View>
     </GestureDetector>
   );

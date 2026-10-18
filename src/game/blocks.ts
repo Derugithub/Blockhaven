@@ -15,6 +15,9 @@ export const Block = {
   Bedrock: 9,
   Planks: 10,
   Torch: 11,
+  BerryBush: 12,
+  CrystalOre: 13,
+  Beacon: 14,
 } as const;
 
 export type BlockId = (typeof Block)[keyof typeof Block];
@@ -24,9 +27,15 @@ export const Item = {
   Stick: 64,
   Coal: 65,
   RawIron: 66,
+  Berries: 67,
+  Apple: 68,
+  Crystal: 69,
+  BerryPie: 70,
   WoodPickaxe: 80,
   StonePickaxe: 81,
   IronPickaxe: 82,
+  WoodSword: 83,
+  StoneSword: 84,
 } as const;
 
 export type ItemId = (typeof Item)[keyof typeof Item];
@@ -60,6 +69,9 @@ export const BLOCKS: Record<BlockId, BlockInfo> = {
   [Block.Bedrock]: { name: 'Bedrock', solid: true, opaque: true, hardness: Infinity, tier: 99, pickaxe: true, light: 0 },
   [Block.Planks]: { name: 'Planks', solid: true, opaque: true, hardness: 0.9, tier: 0, pickaxe: false, light: 0 },
   [Block.Torch]: { name: 'Torch', solid: false, opaque: false, hardness: 0.05, tier: 0, pickaxe: false, light: 7 },
+  [Block.BerryBush]: { name: 'Berry bush', solid: false, opaque: false, hardness: 0.2, tier: 0, pickaxe: false, light: 0 },
+  [Block.CrystalOre]: { name: 'Crystal ore', solid: true, opaque: true, hardness: 2.4, tier: 3, pickaxe: true, light: 3 },
+  [Block.Beacon]: { name: 'Haven Beacon', solid: true, opaque: true, hardness: 1.5, tier: 0, pickaxe: false, light: 10 },
 };
 
 export const BLOCK_IDS = Object.keys(BLOCKS).map(Number) as BlockId[];
@@ -85,12 +97,21 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   [Item.Bedrock]: 'Bedrock',
   [Item.Planks]: 'Planks',
   [Item.Torch]: 'Torch',
+  [Item.BerryBush]: 'Berry bush',
+  [Item.CrystalOre]: 'Crystal ore',
+  [Item.Beacon]: 'Haven Beacon',
   [Item.Stick]: 'Stick',
   [Item.Coal]: 'Coal',
   [Item.RawIron]: 'Raw iron',
+  [Item.Berries]: 'Berries',
+  [Item.Apple]: 'Apple',
+  [Item.Crystal]: 'Crystal',
+  [Item.BerryPie]: 'Berry pie',
   [Item.WoodPickaxe]: 'Wooden pickaxe',
   [Item.StonePickaxe]: 'Stone pickaxe',
   [Item.IronPickaxe]: 'Iron pickaxe',
+  [Item.WoodSword]: 'Wooden sword',
+  [Item.StoneSword]: 'Stone sword',
 };
 
 export function itemName(id: number): string {
@@ -114,8 +135,28 @@ export function pickaxeTier(item: number): number {
   return 0;
 }
 
+export function isTool(item: number): boolean {
+  return pickaxeTier(item) > 0 || item === Item.WoodSword || item === Item.StoneSword;
+}
+
 export function maxStack(item: number): number {
-  return pickaxeTier(item) > 0 ? 1 : 99;
+  return isTool(item) ? 1 : 99;
+}
+
+/** Hunger restored by eating one, 0 when the item is not food. */
+export function foodValue(item: number): number {
+  if (item === Item.Berries) return 1.5;
+  if (item === Item.Apple) return 2.5;
+  if (item === Item.BerryPie) return 6;
+  return 0;
+}
+
+/** Damage one hit deals to a monster with this item in hand. */
+export function attackDamage(item: number | null): number {
+  if (item === Item.StoneSword) return 5;
+  if (item === Item.WoodSword) return 3;
+  if (item != null && pickaxeTier(item) > 0) return 2;
+  return 1;
 }
 
 /** Mining speed multiplier for a pickaxe tier on pickaxe blocks. */

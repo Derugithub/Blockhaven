@@ -2,15 +2,21 @@ import { isKnownItem } from './blocks';
 import { HOTBAR_SIZE, INVENTORY_SIZE, type Inventory, type Slot } from './inventory';
 import { createPlayer, MAX_HEALTH, type Player } from './player';
 import type { GameState } from './game';
+import { createStats, findQuest, type Stats } from './quests';
+import { isDifficulty, MAX_HUNGER, type Difficulty } from './survival';
+import { addBerryBushes, addCrystals } from './terrain';
 import { createEmptyWorld, refreshSky } from './world';
 
 /**
  * Save format. Bump SAVE_VERSION when the shape changes and add a step to `migrateMeta`.
  * v1: meta JSON + one blob holding run-length encoded fg then bg tiles.
+ * v2: adds difficulty, hunger, quest progress, stats and the win flag. v1 worlds also get crystals
+ *     and berry bushes added to their tiles when they are loaded (see `upgradeTiles`).
  */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
-export type SaveMeta = {
+/** Meta as written by v1 builds. */
+export type SaveMetaV1 = {
   version: number;
   seed: number;
   width: number;
@@ -19,6 +25,17 @@ export type SaveMeta = {
   spawn: { x: number; y: number };
   player: { x: number; y: number; health: number; facing: 1 | -1 };
   inventory: { selected: number; slots: ([number, number] | null)[] };
+};
+
+export type SaveMeta = Omit<SaveMetaV1, 'version'> & {
+  version: number;
+  difficulty: Difficulty;
+  hunger: number;
+  quests: string[];
+  stats: Stats;
+  won: boolean;
+  /** Version the tiles were generated with; below 2 means crystals and bushes still need adding. */
+  tilesVersion: number;
 };
 
 export type SavedGame = { meta: string; tiles: Uint8Array };
@@ -67,6 +84,12 @@ export function serializeGame(state: GameState): SavedGame {
       selected: inventory.selected,
       slots: inventory.slots.map((s) => (s ? [s.item, s.count] : null)),
     },
+    difficulty: state.difficulty,
+    hunger: Math.round(state.survival.hunger * 100) / 100,
+    quests: [...state.quests],
+    stats: state.stats,
+    won: state.won,
+    tilesVersion: SAVE_VERSION,
   };
   const fg = rleEncode(world.fg);
   const bg = rleEncode(world.bg);
@@ -83,7 +106,66 @@ export function migrateMeta(raw: unknown): SaveMeta {
   const version = typeof meta.version === 'number' ? meta.version : 0;
   if (version > SAVE_VERSION) throw new Error('This world was saved by a newer version of Blockhaven');
   if (version < 1) throw new Error('Unsupported save version');
-  return meta as SaveMeta;
+  let current = { ...(meta as Record<string, unknown>) };
+  if (version < 2) current = migrateV1toV2(current);
+  return sanitizeV2(current);
+}
+
+/** v1 → v2: survival, quests and stats did not exist, so start them fresh on Normal difficulty. */
+function migrateV1toV2(meta: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...meta,
+    version: 2,
+    difficulty: 'normal',
+    hunger: MAX_HUNGER,
+    quests: [],
+    stats: createStats(),
+    won: false,
+    tilesVersion: 1,
+  };
+}
+
+function finite(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function numberRecord(value: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!value || typeof value !== 'object') return out;
+  for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === 'number' && Number.isFinite(v) && v > 0) out[key] = Math.floor(v);
+  }
+  return out;
+}
+
+/** Fills in anything missing or malformed so a damaged v2 save still loads. */
+function sanitizeV2(meta: Record<string, unknown>): SaveMeta {
+  const raw = (meta.stats ?? {}) as Partial<Stats>;
+  const stats: Stats = {
+    ...createStats(),
+    collected: numberRecord(raw.collected),
+    mined: numberRecord(raw.mined),
+    crafted: numberRecord(raw.crafted),
+    placed: numberRecord(raw.placed),
+    maxDepth: Math.max(0, finite(raw.maxDepth, 0)),
+    nightsSurvived: Math.max(0, finite(raw.nightsSurvived, 0)),
+    monstersDefeated: Math.max(0, finite(raw.monstersDefeated, 0)),
+    foodEaten: Math.max(0, finite(raw.foodEaten, 0)),
+    sawNight: raw.sawNight === true,
+  };
+  const quests = Array.isArray(meta.quests)
+    ? (meta.quests as unknown[]).filter((id): id is string => typeof id === 'string' && !!findQuest(id))
+    : [];
+  return {
+    ...(meta as unknown as SaveMetaV1),
+    version: SAVE_VERSION,
+    difficulty: isDifficulty(meta.difficulty) ? meta.difficulty : 'normal',
+    hunger: Math.max(0, Math.min(MAX_HUNGER, finite(meta.hunger, MAX_HUNGER))),
+    quests: [...new Set(quests)],
+    stats,
+    won: meta.won === true,
+    tilesVersion: finite(meta.tilesVersion, SAVE_VERSION),
+  };
 }
 
 export function deserializeGame(saved: SavedGame): GameState {
@@ -94,6 +176,12 @@ export function deserializeGame(saved: SavedGame): GameState {
   const bg = rleDecode(saved.tiles, size, fg.next);
   world.fg.set(fg.bytes);
   world.bg.set(bg.bytes);
+  if (meta.tilesVersion < 2) {
+    // Worlds from v1 had no crystals or berry bushes. Both only replace untouched stone and open grass,
+    // so anything the player built stays as it was.
+    addCrystals(world, meta.seed);
+    addBerryBushes(world, meta.seed, meta.spawn.x);
+  }
   refreshSky(world);
 
   const player: Player = createPlayer(meta.player.x, meta.player.y);
@@ -119,6 +207,16 @@ export function deserializeGame(saved: SavedGame): GameState {
     spawn: { ...meta.spawn },
     mining: null,
     dead: false,
+    difficulty: meta.difficulty,
+    survival: { hunger: meta.difficulty === 'peaceful' ? MAX_HUNGER : meta.hunger, regenTimer: 0, starveTimer: 0 },
+    monsters: [],
+    nextMonsterId: 1,
+    spawnTimer: 0,
+    stats: meta.stats,
+    quests: meta.quests,
+    questTimer: 0,
+    attackCooldown: 0,
+    won: meta.won,
     hudVersion: 0,
     worldVersion: 0,
   };

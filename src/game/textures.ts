@@ -53,6 +53,46 @@ const BEDROCK: Rgb = [58, 58, 66];
 const COAL: Rgb = [34, 34, 38];
 const IRON: Rgb = [214, 164, 120];
 const STICK: Rgb = [140, 96, 50];
+const CRYSTAL: Rgb = [120, 226, 236];
+const BERRY: Rgb = [196, 44, 84];
+const APPLE: Rgb = [214, 52, 44];
+
+/** A pointed crystal shard with a light left face and a darker right face. */
+function shard(c: Canvas16, cx: number, top: number, bottom: number, half: number, color: Rgb) {
+  for (let y = top; y <= bottom; y++) {
+    const t = (y - top) / Math.max(1, bottom - top);
+    const w = Math.max(0, Math.round(half * Math.min(1, t * 2.2)));
+    for (let dx = -w; dx <= w; dx++) {
+      const k = dx < 0 ? 1.18 : dx === 0 ? 1.35 : 0.82;
+      c.set(cx + dx, y, shade(color, k));
+    }
+  }
+}
+
+function berryCluster(c: Canvas16, spots: number[][]) {
+  for (const [x, y] of spots) {
+    c.set(x, y, BERRY);
+    c.set(x + 1, y, shade(BERRY, 0.8));
+    c.set(x, y + 1, shade(BERRY, 0.75));
+    c.set(x + 1, y + 1, shade(BERRY, 0.6));
+    c.set(x, y, shade(BERRY, 1.35));
+  }
+}
+
+function sword(c: Canvas16, blade: Rgb) {
+  // Blade from the top-right corner down to the guard.
+  for (let i = 0; i < 9; i++) {
+    c.set(13 - i, 2 + i, shade(blade, 1.15));
+    c.set(12 - i, 2 + i, blade);
+    c.set(13 - i, 3 + i, shade(blade, 0.72));
+  }
+  c.set(13, 2, shade(blade, 1.3));
+  // Guard and handle.
+  drawLine(c, 2, 9, 6, 13, shade(STICK, 0.7));
+  drawLine(c, 3, 12, 1, 14, STICK);
+  drawLine(c, 4, 12, 2, 14, shade(STICK, 0.8));
+  c.set(1, 15, shade(STICK, 0.6));
+}
 
 function stoneBase(c: Canvas16, salt: number) {
   c.fill((x, y) => {
@@ -166,6 +206,83 @@ export function texturePixels(id: number): Uint8Array {
       c.set(8, 4, [255, 200, 80]);
       c.set(8, 3, [255, 120, 30], 180);
       break;
+    case Block.BerryBush: {
+      c.fill((x, y) => {
+        const dx = x - 7.5;
+        const dy = y - 10;
+        if (dx * dx * 0.7 + dy * dy * 1.3 > 44 + hash2(x, y, 121) * 10 || y > 15) return null;
+        const n = hash2(x, y, 122);
+        return n > 0.84 ? shade(LEAF, 0.62) : speckle(shade(LEAF, 0.9), x, y, 123, 0.12);
+      });
+      berryCluster(c, [
+        [3, 8],
+        [9, 6],
+        [6, 11],
+        [11, 10],
+      ]);
+      break;
+    }
+    case Block.CrystalOre:
+      stoneBase(c, 131);
+      shard(c, 5, 3, 11, 2, CRYSTAL);
+      shard(c, 11, 6, 13, 1, shade(CRYSTAL, 0.92));
+      shard(c, 9, 10, 14, 1, shade(CRYSTAL, 1.05));
+      break;
+    case Block.Beacon:
+      c.fill((x, y) => {
+        const border = x === 0 || y === 0 || x === 15 || y === 15;
+        const inner = x >= 3 && x <= 12 && y >= 3 && y <= 12;
+        if (border) return shade(STONE, 0.62);
+        if (!inner) return speckle(STONE, x, y, 141, 0.08);
+        const d = Math.abs(x - 7.5) + Math.abs(y - 7.5);
+        return d < 3 ? [240, 255, 255] : d < 5 ? shade(CRYSTAL, 1.15) : shade(CRYSTAL, 0.8);
+      });
+      break;
+    case Item.Crystal:
+      shard(c, 7, 1, 14, 3, CRYSTAL);
+      shard(c, 12, 7, 14, 1, shade(CRYSTAL, 0.9));
+      shard(c, 3, 9, 14, 1, shade(CRYSTAL, 1.05));
+      break;
+    case Item.Berries:
+      berryCluster(c, [
+        [4, 6],
+        [8, 4],
+        [10, 8],
+        [6, 9],
+        [3, 11],
+        [9, 12],
+      ]);
+      c.set(8, 3, shade(LEAF, 0.9));
+      c.set(9, 2, LEAF);
+      break;
+    case Item.Apple:
+      c.fill((x, y) => {
+        const dx = x - 7.5;
+        const dy = y - 9;
+        if (dx * dx + dy * dy * 1.1 > 30) return null;
+        const light = dx < -1 && dy < -1 ? 1.3 : dx > 2 || dy > 3 ? 0.78 : 1;
+        return shade(APPLE, light);
+      });
+      drawLine(c, 8, 2, 8, 4, STICK);
+      c.set(9, 2, LEAF);
+      c.set(10, 2, LEAF);
+      c.set(10, 3, shade(LEAF, 0.8));
+      break;
+    case Item.BerryPie:
+      c.fill((x, y) => {
+        if (y < 6 || y > 13) return null;
+        const dx = x - 7.5;
+        if (Math.abs(dx) > 7 - (y > 11 ? 1 : 0)) return null;
+        if (y === 6 || y >= 11) return shade(PLANK, y >= 12 ? 0.82 : 1.1);
+        return (x + y) % 3 === 0 ? shade(PLANK, 1.05) : speckle(BERRY, x, y, 151, 0.18);
+      });
+      break;
+    case Item.WoodSword:
+      sword(c, PLANK);
+      break;
+    case Item.StoneSword:
+      sword(c, STONE);
+      break;
     case Item.Stick:
       drawLine(c, 4, 12, 11, 3, STICK);
       drawLine(c, 5, 12, 12, 3, shade(STICK, 0.75));
@@ -232,14 +349,19 @@ export function backWallPixels(id: number): Uint8Array {
 }
 
 /** World atlas layout: row 0 blocks by id, row 1 back walls, row 2 crack stages. */
-export const ATLAS_COLUMNS = 12;
+export const ATLAS_COLUMNS = 15;
 export const ATLAS_ROWS = 3;
 
 /** Item ids that have an icon. */
 export const ICON_ITEMS = [
   Item.Grass, Item.Dirt, Item.Stone, Item.Sand, Item.Wood, Item.Leaves, Item.CoalOre, Item.IronOre,
-  Item.Planks, Item.Torch, Item.Stick, Item.Coal, Item.RawIron, Item.WoodPickaxe, Item.StonePickaxe, Item.IronPickaxe,
+  Item.Planks, Item.Torch, Item.BerryBush, Item.CrystalOre, Item.Beacon, Item.Stick, Item.Coal, Item.RawIron,
+  Item.Berries, Item.Apple, Item.Crystal, Item.BerryPie, Item.WoodPickaxe, Item.StonePickaxe, Item.IronPickaxe,
+  Item.WoodSword, Item.StoneSword,
 ];
+
+/** Highest block id drawn in the world atlas. */
+export const MAX_BLOCK_ID = 14;
 
 /** Full atlas pixels, ATLAS_COLUMNS * 16 wide and ATLAS_ROWS * 16 tall. */
 export function atlasPixels(): { width: number; height: number; pixels: Uint8Array } {
@@ -252,7 +374,7 @@ export function atlasPixels(): { width: number; height: number; pixels: Uint8Arr
       pixels.set(src.subarray(y * TEX * 4, (y + 1) * TEX * 4), dst);
     }
   };
-  for (let id = 1; id <= 11; id++) {
+  for (let id = 1; id <= MAX_BLOCK_ID; id++) {
     blit(texturePixels(id), id, 0);
     blit(backWallPixels(id), id, 1);
   }
