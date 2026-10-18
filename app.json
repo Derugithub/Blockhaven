@@ -1,0 +1,78 @@
+{
+  "expo": {
+    "name": "Blockhaven",
+    "slug": "blockhaven",
+    "owner": "deredo",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/images/icon.png",
+    "scheme": "blockhaven",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#14171F",
+    "android": {
+      "package": "com.deredo.blockhaven",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["com.google.android.gms.permission.AD_ID"]
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-dev-client",
+      "expo-router",
+      "expo-sqlite",
+      "expo-system-ui",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#14171F",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          // TEMPORARY: Google's sample Android app ID. Replace with the real Blockhaven AdMob app ID
+          // (publisher pub-4342572133101591) before release, here and in the root block below.
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          // Kept for a future iOS release. Android is the only ad target for now.
+          // "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "delayAppMeasurementInit": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "cb878d1b-44b4-4a4d-beab-c5b4db6dbef6"
+      }
+    }
+  },
+  "react-native-google-mobile-ads": {
+    // TEMPORARY: Google's sample Android app ID. Replace with the real Blockhaven AdMob app ID.
+    "android_app_id": "ca-app-pub-3940256099942544~3347511713",
+    // Kept for a future iOS release. Android is the only ad target for now.
+    // "ios_app_id": "ca-app-pub-3940256099942544~1458002511",
+    "delay_app_measurement_init": true
+  }
+}
