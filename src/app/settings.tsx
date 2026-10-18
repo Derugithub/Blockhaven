@@ -1,12 +1,13 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { AppText, Button, IconButton, Panel, Screen } from '@/components/ui';
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from '@/lib/ads/ad-config';
 import { useAds } from '@/lib/ads/ads-context';
-import { CONTROL_SIZES, useSettings, type ControlsSize } from '@/lib/settings';
+import { CONTROL_SIZES, MAX_VOLUME, useSettings, type ControlsSize } from '@/lib/settings';
 import { Colors } from '@/theme/theme';
 
 export default function SettingsScreen() {
@@ -14,6 +15,7 @@ export default function SettingsScreen() {
   const { settings, update } = useSettings();
   const ads = useAds();
   const version = Constants.expoConfig?.version ?? '1.0.0';
+  const [tutorialReset, setTutorialReset] = useState(false);
 
   return (
     <Screen>
@@ -55,12 +57,86 @@ export default function SettingsScreen() {
         </Panel>
 
         <Panel>
+          <AppText variant="heading">Sound</AppText>
+          <View style={styles.switchRow}>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Sound effects</AppText>
+              <AppText variant="meta" color={Colors.muted}>
+                Footsteps, digging, crafting, monsters.
+              </AppText>
+            </View>
+            <Switch
+              value={settings.soundEffects}
+              onValueChange={(soundEffects) => update({ soundEffects })}
+              trackColor={{ true: Colors.accent, false: Colors.line }}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Music & ambience</AppText>
+              <AppText variant="meta" color={Colors.muted}>
+                Soft wind by day, crickets at night.
+              </AppText>
+            </View>
+            <Switch
+              value={settings.music}
+              onValueChange={(music) => update({ music })}
+              trackColor={{ true: Colors.accent, false: Colors.line }}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Volume</AppText>
+              <AppText variant="meta" color={Colors.muted}>
+                {settings.volume === 0 ? 'Muted' : `${settings.volume * 10}%`}
+              </AppText>
+            </View>
+            <IconButton
+              icon="remove"
+              label="Lower the volume"
+              onPress={() => update({ volume: Math.max(0, settings.volume - 1) })}
+            />
+            <View style={styles.meter} accessibilityLabel={`Volume ${settings.volume} of ${MAX_VOLUME}`}>
+              {Array.from({ length: MAX_VOLUME }, (_, i) => (
+                <View key={i} style={[styles.meterBar, { height: 6 + i * 1.6 }, i < settings.volume && styles.meterOn]} />
+              ))}
+            </View>
+            <IconButton
+              icon="add"
+              label="Raise the volume"
+              onPress={() => update({ volume: Math.min(MAX_VOLUME, settings.volume + 1) })}
+            />
+          </View>
+        </Panel>
+
+        <Panel>
           <AppText variant="heading">How to play</AppText>
           <AppText variant="body" color={Colors.muted} style={styles.sub}>
             {
-              'Walk with the arrows and jump with the up button. Tap a nearby block to mine it, tap empty space to place the block selected in your hotbar. Open the inventory to craft planks, sticks, torches and pickaxes. Stone and coal need a pickaxe, iron needs a stone pickaxe. Torches light up caves and the night. Long falls hurt.'
+              'Your goal: find 10 glowing crystals deep underground and build the Haven Beacon. Follow the quest card at the top of the screen; each quest gives a reward.'
             }
           </AppText>
+          <AppText variant="body" color={Colors.muted} style={styles.sub}>
+            {
+              'Walk with the arrows and jump with the up button. Tap a nearby block to mine it, tap empty space to place the block selected in your hotbar. Open the bag to craft planks, sticks, tools, swords, torches and food.'
+            }
+          </AppText>
+          <AppText variant="body" color={Colors.muted} style={styles.sub}>
+            {
+              'Stone and coal need a wooden pickaxe, iron needs a stone pickaxe and crystals need an iron one. Eat berries, apples or berry pie when the hunger bar runs low. At night monsters walk the surface: tap them to fight, or stay in torch light. Long falls hurt. Peaceful worlds have no monsters and no hunger.'
+            }
+          </AppText>
+          <Button
+            label={tutorialReset ? 'Tutorial will play when you open a world' : 'Replay the tutorial'}
+            icon="school-outline"
+            kind="secondary"
+            disabled={tutorialReset}
+            onPress={() => {
+              update({ tutorialDone: false, tutorialStep: 'walk' });
+              setTutorialReset(true);
+            }}
+            style={styles.sub}
+          />
         </Panel>
 
         <Panel>
@@ -109,4 +185,7 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
   stack: { gap: 10, marginTop: 12 },
   version: { textAlign: 'center' },
+  meter: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 24 },
+  meterBar: { width: 5, borderRadius: 2, backgroundColor: Colors.line },
+  meterOn: { backgroundColor: Colors.accent },
 });

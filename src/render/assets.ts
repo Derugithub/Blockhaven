@@ -1,6 +1,6 @@
 import { AlphaType, ColorType, Skia, type SkImage, type SkRect } from '@shopify/react-native-skia';
 
-import { atlasPixels, ICON_ITEMS, TEX, texturePixels } from '@/game/textures';
+import { atlasPixels, ICON_ITEMS, MAX_BLOCK_ID, TEX, texturePixels } from '@/game/textures';
 
 export type RenderAssets = {
   atlas: SkImage;
@@ -33,7 +33,7 @@ export function getRenderAssets(): RenderAssets {
   const rect = (col: number, row: number) => Skia.XYWHRect(col * TEX, row * TEX, TEX, TEX);
   const front: SkRect[] = [];
   const back: SkRect[] = [];
-  for (let id = 0; id < 12; id++) {
+  for (let id = 0; id <= MAX_BLOCK_ID; id++) {
     front.push(rect(id, 0));
     back.push(rect(id, 1));
   }

@@ -29,6 +29,15 @@
       "expo-sqlite",
       "expo-system-ui",
       [
+        "expo-audio",
+        {
+          // Playback only: no microphone, no background playback service.
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#14171F",

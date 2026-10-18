@@ -4,10 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, Button, IconButton } from '@/components/ui';
 import { itemName } from '@/game/blocks';
-import { craft, hasIngredients, RECIPES } from '@/game/crafting';
+import { hasIngredients, RECIPES, type CraftResult, type Recipe } from '@/game/crafting';
 import { countItem, HOTBAR_SIZE, moveSlot, selectSlot, type Inventory } from '@/game/inventory';
 import { Colors, Fonts } from '@/theme/theme';
 
+import { PulseRing } from './hud';
 import { ItemIcon } from './item-icon';
 
 /**
@@ -19,11 +20,20 @@ export function InventoryPanel({
   onChanged,
   onClose,
   onMessage,
+  onCraft,
+  highlightRecipe,
+  tutorialHint,
 }: {
   inventory: Inventory;
   onChanged: () => void;
   onClose: () => void;
   onMessage: (text: string) => void;
+  /** Crafts through the game so quests, sounds and the win are handled. */
+  onCraft: (recipe: Recipe) => CraftResult;
+  /** Recipe id the tutorial points at. */
+  highlightRecipe?: string | null;
+  /** Tutorial text shown at the top of the panel. */
+  tutorialHint?: string | null;
 }) {
   const [, setVersion] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -63,6 +73,13 @@ export function InventoryPanel({
           <AppText variant="title">Inventory</AppText>
           <IconButton icon="close" label="Close inventory" onPress={onClose} />
         </View>
+        {tutorialHint ? (
+          <View style={styles.tutorial}>
+            <AppText variant="meta" color="#FFFFFF">
+              {tutorialHint}
+            </AppText>
+          </View>
+        ) : null}
         <ScrollView contentContainerStyle={[styles.body, wide && styles.bodyWide]}>
           <View>
             <AppText variant="label" color={Colors.muted} style={styles.section}>
@@ -104,8 +121,10 @@ export function InventoryPanel({
             </AppText>
             {RECIPES.map((recipe) => {
               const ok = hasIngredients(inventory, recipe);
+              const highlighted = highlightRecipe === recipe.id;
               return (
-                <View key={recipe.id} style={styles.recipe}>
+                <View key={recipe.id} style={[styles.recipe, recipe.id === 'beacon' && styles.beacon]}>
+                  {highlighted ? <PulseRing radius={14} inset={-3} /> : null}
                   <ItemIcon item={recipe.output.item} size={32} />
                   <View style={styles.recipeText}>
                     <AppText variant="bodyMedium">
@@ -133,7 +152,7 @@ export function InventoryPanel({
                     kind={ok ? 'primary' : 'secondary'}
                     disabled={!ok}
                     onPress={() => {
-                      const result = craft(inventory, recipe);
+                      const result = onCraft(recipe);
                       if (result === 'full') onMessage('Inventory is full');
                       setPicked(null);
                       bump();
@@ -196,4 +215,13 @@ const styles = StyleSheet.create({
   recipeText: { flex: 1, gap: 4 },
   inputs: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   input: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  beacon: { borderWidth: 1, borderColor: 'rgba(123,227,236,0.5)' },
+  tutorial: {
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+    backgroundColor: 'rgba(242,193,78,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(242,193,78,0.5)',
+  },
 });

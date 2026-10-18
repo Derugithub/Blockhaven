@@ -161,6 +161,6 @@ test('tap on empty space places the selected block through the game API', () => 
   const game = flatGame();
   addItem(game.inventory, Item.Stone, 5);
   const events = tapTile(game, 13, 19);
-  assert.deepEqual(events, [{ type: 'placed' }]);
+  assert.deepEqual(events, [{ type: 'placed', block: Block.Stone }]);
   assert.equal(getFg(game.world, 13, 19), Block.Stone);
 });

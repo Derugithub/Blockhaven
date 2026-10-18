@@ -2,7 +2,9 @@
 
 ## Overview
 
-Blockhaven is a 2D side-view block sandbox for Android, built with Expo and React Native. Each world is generated from a seed: grass hills, sandy stretches, trees, caves, coal and iron ore, and a bedrock floor. You walk, jump, dig, build, craft better pickaxes, and light the caves and the night with torches.
+Blockhaven is a 2D side-view block sandbox for Android, built with Expo and React Native. Each world is generated from a seed: grass hills, sandy stretches, trees and berry bushes, caves, coal and iron ore, a deep crystal layer, and a bedrock floor. You walk, jump, dig, build, craft better tools, keep yourself fed, fight off night monsters, and light the caves with torches.
+
+**The goal:** dig down to the crystal layer just above the bedrock, collect 10 crystals, and build the **Haven Beacon**. A quest line with rewards leads the way there, and a short tutorial teaches the controls the first time you play.
 
 There is no account, no custom backend, and no cloud sync. Worlds are saved in a SQLite database on the device.
 
@@ -15,13 +17,22 @@ There is no account, no custom backend, and no cloud sync. Worlds are saved in a
 - Tap a block within reach to mine it; mining time depends on the block and your best pickaxe
 - Tap empty space within reach to place the block selected in the hotbar
 - Eight-slot hotbar and a 32-slot inventory with move, swap and merge
-- Crafting: planks, sticks, torches, and wooden, stone and iron pickaxes
+- Crafting: planks, sticks, torches, wooden, stone and iron pickaxes, wooden and stone swords, berry pie, and the Haven Beacon
+- A goal: 10 rare crystals in the deepest layer (iron pickaxe needed) build the Haven Beacon, with a celebration screen. Play continues afterwards
+- 13 quests with item rewards (collect wood, craft a pickaxe, mine stone, find coal, place torches, build a shelter, survive a night, find iron, craft an iron pickaxe, reach 40 m deep, defeat a monster, find a crystal, build the beacon), a quest card in the HUD, a quest list, and a toast and sound on completion
+- First-time tutorial: walk, jump, dig, select, place, open the bag, craft planks, sticks and a wooden pickaxe, place a torch. The control for each step pulses. Skippable, and it can be replayed from Settings
+- Survival: health and hunger bars, fall damage, slow hunger drain, regeneration when fed, berries from bushes, apples from leaves, and berry pie
+- Night monsters that spawn on the dark surface away from torches and from you, walk toward you, hit on contact, can be fought by tapping them (swords hit harder), and burn away at sunrise. At most six at a time
+- Peaceful mode, chosen per world when you create it: no monsters and no hunger. Normal is the default
+- Depth meter that calls out the crystal layer
+- Animated character: walk cycle tied to speed with swinging arms and legs and a body bob, idle breathing, jump and fall poses, an arm swing for digging, placing and fighting, facing flips, and a red flash when hurt
+- Sound: footsteps by surface (grass and dirt, stone, sand, wood) in time with the walk cycle, digging and breaking per material, placing, jumping, landing, torches and their crackle, crafting, pickups, quests, hurt, monsters, eating, a win fanfare, and soft day and night ambience. Sound effects, ambience and volume are in Settings
 - Day and night cycle with a moving sun and moon, sky colours, darkness underground, and torch light
 - Multiple saved worlds: create with a name and seed, continue, delete with confirmation
 - Autosave every 30 seconds, when the app goes to the background, when you die, and when you leave a world
-- Pause menu, inventory and crafting screen, settings, and a hint toggle
+- Pause menu, inventory and crafting screen, quest list, settings, and a hint toggle
 - Pixel-art blocks and items drawn from code at startup. There are no external textures
-- Ads from Google AdMob after UMP consent: a banner on the world list, an optional rewarded ad (revive in place, or a bonus bundle once every 10 minutes), and a frequency-capped interstitial when you return to the menu. Play never waits on an ad
+- Ads from Google AdMob after UMP consent: a banner on the world list, an optional rewarded ad (revive in place, or a bonus bundle of 8 torches, 16 planks, 8 sticks, 3 apples and a berry pie once every 10 minutes, from the pause menu), and a frequency-capped interstitial when you return to the menu. Play never waits on an ad
 
 ## Requirements
 
@@ -64,21 +75,31 @@ Do not run that command until you mean to start a build. Development and preview
 
 ## How to play
 
+1. Create a world. Keep **Normal** for monsters and hunger, or pick **Peaceful** to just build.
+2. Follow the tutorial: walk, jump, dig a block, pick it in the hotbar, place it, then open the bag and craft planks, sticks and a wooden pickaxe.
+3. Follow the quest card at the top left. Each quest pays a reward: chop wood, mine stone, find coal, make torches, build a shelter before night.
+4. Keep the hunger bar up with berries (bushes), apples (leaves) or berry pie. When fed, health comes back on its own.
+5. At night, stay in torch light or fight: tap a monster to hit it. A sword helps. Monsters burn away at sunrise.
+6. Dig down. Find iron, craft an iron pickaxe, and follow the depth meter to the crystal layer just above the bedrock. Collect 10 crystals and craft the Haven Beacon.
+
 | Action | Control |
 | --- | --- |
 | Walk | Hold the left or right arrow (bottom left) |
 | Jump | Hold the up arrow (bottom right) |
 | Mine | Tap a block within reach. Mining keeps going until the block breaks; drag to the next block to keep digging |
 | Place | Select a block in the hotbar, then tap empty space next to another block or a back wall |
+| Fight | Tap a monster within reach. Damage: hand 1, pickaxe 2, wooden sword 3, stone sword 5 |
+| Eat | Select food in the hotbar, then tap the orange eat button above the jump button |
 | Inventory and crafting | Cube button (top right) |
+| Quests | Trophy button (top right), or tap the quest card |
 | Pause | Pause button (top right), or the Android back button |
 
 Mining rules:
 
-- Dirt, grass, sand, logs, leaves, planks and torches can be mined by hand
-- Stone and coal ore need a pickaxe. Iron ore needs a stone pickaxe or better. Bedrock cannot be mined
+- Dirt, grass, sand, logs, leaves, planks, torches and berry bushes can be mined by hand
+- Stone and coal ore need a pickaxe. Iron ore needs a stone pickaxe or better. Crystal ore needs an iron pickaxe. Bedrock cannot be mined
 - The best pickaxe in your inventory is used automatically. Stone is faster with a stone pickaxe, faster again with iron
-- Grass drops dirt, coal ore drops coal, iron ore drops raw iron, and leaves sometimes drop a stick
+- Grass drops dirt, coal ore drops coal, iron ore drops raw iron, crystal ore drops a crystal, berry bushes drop two berries (and sometimes the bush itself, to replant on grass or dirt), and leaves sometimes drop an apple or a stick
 
 Recipes:
 
@@ -86,12 +107,23 @@ Recipes:
 | --- | --- |
 | 4 planks | 1 log |
 | 4 sticks | 2 planks |
-| 4 torches | 1 coal, 1 stick |
 | Wooden pickaxe | 3 planks, 2 sticks |
+| Wooden sword | 2 planks, 1 stick |
+| 4 torches | 1 coal, 1 stick |
 | Stone pickaxe | 3 stone, 2 sticks |
+| Stone sword | 2 stone, 1 stick |
 | Iron pickaxe | 3 raw iron, 2 sticks |
+| Berry pie | 3 berries, 1 apple |
+| Haven Beacon | 10 crystals, 5 stone |
 
-Falling more than four tiles costs health. Health comes back slowly. If it reaches zero you can respawn at the world spawn with your items, or watch a rewarded ad to get back up where you fell.
+Survival:
+
+- Health: 10 hearts. Falling more than four tiles hurts. A monster hit costs 2 hearts and knocks you back
+- Hunger: 10 points. It drops about one point every 72 seconds, a little faster while walking. While it is at 4 or more, health comes back one heart every 4 seconds, which costs a little hunger. At zero you lose a heart every 8 seconds, down to one heart
+- Food: berries +1.5, apple +2.5, berry pie +6
+- Monsters spawn only at night, on the open surface, 14 to 28 tiles from you, and never within torch light (about 8 tiles from a torch). They are not saved; a reloaded world starts without them
+- If health reaches zero you can respawn at the world spawn with your items, full health and a full stomach, or watch a rewarded ad to get back up where you fell
+- Peaceful worlds have no hunger and no monsters, and skip the monster quest
 
 ## Rendering
 
@@ -99,7 +131,21 @@ The world is drawn with `@shopify/react-native-skia`. A block atlas (blocks, dar
 
 Light is computed per visible tile: sky light fades with depth below the first opaque block of each column and scales with the time of day; torches add a radius of light; the player has a small glow. Light is drawn as eight darkness levels, one path each.
 
-The HUD (health, clock, hotbar) is React Native. It only updates when health, the hotbar, or the clock label change.
+The player and monsters are drawn from a few rectangles each. Arms and legs rotate around the shoulder and hip, so the animation costs a handful of draw calls per frame. The walk cycle advances with the distance actually walked, and a footstep event fires on each half turn of the cycle, which is what keeps footstep sounds in time with the legs.
+
+The HUD (health, hunger, clock, depth, quest card, hotbar) is React Native. It only updates when something it shows changes.
+
+## Sound
+
+Sound uses `expo-audio`. Every sound is a small mono WAV in `assets/sounds`, generated by `scripts/generate-sounds.mjs` from seeded noise and tones (effects at 16 kHz, ambient loops at 11 kHz, about 520 KB in total). Run `node scripts/generate-sounds.mjs` to rebuild them; the output is deterministic.
+
+- All players are created when a world opens and released when it closes. Short effects are pooled and rewound, so playing one is a single native call
+- Footsteps alternate two variants per surface, with a slight random pitch, and are throttled
+- Day and night ambience crossfade with the light level and fade down underground
+- Audio pauses when the app goes to the background, and ambience pauses on the pause and death screens
+- The `expo-audio` config plugin is set to playback only: no microphone permission and no background playback service
+
+**Sound credits:** all sounds were synthesised for Blockhaven by `scripts/generate-sounds.mjs` and are covered by the project's MIT license. No third-party recordings are used.
 
 ## Fonts and Amharic
 
@@ -119,10 +165,12 @@ The database file is `blockhaven.db`, opened with `expo-sqlite`. `PRAGMA user_ve
 | `created_at` | Unix time in milliseconds |
 | `updated_at` | Last save, Unix time in milliseconds |
 | `format_version` | Save format version (`SAVE_VERSION` in `src/game/save-format.ts`) |
-| `meta` | JSON: seed, size, time of day, spawn, player position, health, facing, inventory |
+| `meta` | JSON: seed, size, time of day, spawn, player position, health, facing, inventory, difficulty, hunger, finished quests, stats, win flag |
 | `tiles` | Blob: run-length encoded front tiles, then back walls |
+| `difficulty` | `normal` or `peaceful` (schema v2) |
+| `won` | 1 once the Haven Beacon is built (schema v2) |
 
-Saves from a newer app version are refused instead of being misread. Unknown items in a save are dropped. Settings (controls size, hints) are stored with `expo-sqlite/kv-store`. Nothing is synced.
+Save format v2 adds difficulty, hunger, quest progress, stats and the win flag. Version 1 worlds load as Normal with a full hunger bar and no quests done, and their untouched stone and grass gain the crystals and berry bushes v1 did not generate, so an old world can still be finished. Saves from a newer app version are refused instead of being misread. Unknown items and quest ids in a save are dropped. Settings (controls size, hints, sound effects, ambience, volume, tutorial progress) are stored with `expo-sqlite/kv-store`. Nothing is synced.
 
 ## Ads
 
@@ -132,7 +180,7 @@ Saves from a newer app version are refused instead of being misread. Unknown ite
 | --- | --- | --- |
 | `menu_banner` | Anchored adaptive banner under the world list | Never on the game screen |
 | `return_interstitial` | When you save and quit to the menu | Not in the first 3 minutes of a session, only after 2 minutes of play, at least 4 minutes apart, at most 4 per session |
-| `game_rewarded` | Revive in place after a fall, or a bonus bundle (8 torches, 16 planks, 8 sticks) from the pause menu | Optional. The bonus can be claimed once every 10 minutes |
+| `game_rewarded` | Revive in place after dying, or a bonus bundle (8 torches, 16 planks, 8 sticks, 3 apples, 1 berry pie) from the pause menu | Optional. The bonus can be claimed once every 10 minutes |
 
 During closed testing every build, production included, uses Google's test units (`TestIds`). The real unit IDs are switched off in `src/lib/ads/production-unit-ids.js` with `const PRODUCTION_UNIT_IDS = null;`.
 
@@ -192,14 +240,17 @@ It uses the same `EXPO_TOKEN` secret as `.github/workflows/build.yml`. EAS downl
 
 ```text
 src/app/            World list, new world, play, and settings routes
-src/game/           Pure game logic: blocks, terrain, physics, mining, crafting, lighting, day cycle, save format, textures
+src/game/           Pure game logic: blocks, terrain, physics, mining, crafting, survival, monsters, quests, tutorial, lighting, day cycle, save format, textures
+src/audio/          Sound list, event-to-sound mapping, and the expo-audio sound manager
 src/render/         Skia atlas, item icons, and the world renderer
-src/screens/game/   Game screen, HUD, controls, inventory and crafting, pause and death dialogs
+src/screens/game/   Game screen, HUD, controls, inventory and crafting, quests, tutorial, win screen, pause and death dialogs
 src/components/     Shared UI and the menu banner
 src/lib/            SQLite worlds, settings, and ads
 src/lib/ads/        Consent, ad policy, AdMob app ID resolution, and production unit IDs
 src/theme/          Colours, Inter faces, and the Amharic font fallback
-tests/              Terrain, gameplay, crafting, save format, lighting, fonts, and ad config tests
+tests/              Terrain, gameplay, crafting, survival, monsters, quests, tutorial, save migration, lighting, fonts, and ad config tests
+scripts/            Sound generator
+assets/sounds/      Generated sound effects and ambient loops
 eas.json            EAS build profiles
 .github/workflows/  Manual Android EAS builds (cloud and local)
 ```

@@ -36,7 +36,12 @@ export function dropFor(block: number, roll: number): { item: number; count: num
     case Block.IronOre:
       return { item: Item.RawIron, count: 1 };
     case Block.Leaves:
-      return roll < 0.25 ? { item: Item.Stick, count: 1 } : null;
+      if (roll < 0.08) return { item: Item.Apple, count: 1 };
+      return roll < 0.33 ? { item: Item.Stick, count: 1 } : null;
+    case Block.BerryBush:
+      return { item: Item.Berries, count: 2 };
+    case Block.CrystalOre:
+      return { item: Item.Crystal, count: 1 };
     case Block.Air:
     case Block.Bedrock:
       return null;
@@ -45,7 +50,15 @@ export function dropFor(block: number, roll: number): { item: number; count: num
   }
 }
 
-export type BreakResult = { ok: true; drop: { item: number; count: number } | null; lost: number } | { ok: false };
+/** A second drop on top of the main one: a berry bush sometimes gives itself back so it can be replanted. */
+export function extraDropFor(block: number, roll: number): { item: number; count: number } | null {
+  if (block === Block.BerryBush && roll >= 0.5) return { item: Item.BerryBush, count: 1 };
+  return null;
+}
+
+export type Drop = { item: number; count: number };
+
+export type BreakResult = { ok: true; block: number; drop: Drop | null; extra: Drop | null; lost: number } | { ok: false };
 
 /** Removes a block and puts its drop in the inventory. Torches resting on it are not affected. */
 export function breakBlock(world: World, inv: Inventory, tx: number, ty: number, roll = Math.random()): BreakResult {
@@ -53,8 +66,10 @@ export function breakBlock(world: World, inv: Inventory, tx: number, ty: number,
   if (block === Block.Air || block === Block.Bedrock) return { ok: false };
   setFg(world, tx, ty, Block.Air);
   const drop = dropFor(block, roll);
-  const lost = drop ? addItem(inv, drop.item, drop.count) : 0;
-  return { ok: true, drop, lost };
+  const extra = extraDropFor(block, roll);
+  let lost = drop ? addItem(inv, drop.item, drop.count) : 0;
+  if (extra) lost += addItem(inv, extra.item, extra.count);
+  return { ok: true, block, drop, extra, lost };
 }
 
 /** A block needs something next to it, or a back wall, so it cannot float in open sky. */
@@ -66,7 +81,7 @@ export function hasSupport(world: World, tx: number, ty: number): boolean {
     [tx, ty - 1],
     [tx, ty + 1],
   ];
-  return around.some(([x, y]) => getFg(world, x, y) !== Block.Air && getFg(world, x, y) !== Block.Torch);
+  return around.some(([x, y]) => blockInfo(getFg(world, x, y)).solid);
 }
 
 export type PlaceResult = 'placed' | 'occupied' | 'nothing' | 'blocked' | 'unsupported' | 'out';
@@ -83,6 +98,9 @@ export function placeSelected(world: World, inv: Inventory, player: Player, tx: 
     const wall = getBg(world, tx, ty) !== Block.Air;
     const side = isSolidAt(world, tx - 1, ty) || isSolidAt(world, tx + 1, ty) || isSolidAt(world, tx, ty + 1);
     if (!wall && !side) return 'unsupported';
+  } else if (item === Block.BerryBush) {
+    const below = getFg(world, tx, ty + 1);
+    if (below !== Block.Grass && below !== Block.Dirt) return 'unsupported';
   } else if (!hasSupport(world, tx, ty)) {
     return 'unsupported';
   }

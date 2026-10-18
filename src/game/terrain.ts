@@ -99,7 +99,56 @@ export function generateWorld(seed: number, width = WORLD_WIDTH, height = WORLD_
     lastTree = x;
   }
 
+  addBerryBushes(world, seed, spawnX);
+  addCrystals(world, seed);
   refreshSky(world);
   // Feet stand on the surface tile; the player box top is 2 rows higher.
   return { world, spawnX: spawnX + 0.15, spawnY: surface[spawnX] - 1.8 };
+}
+
+/** Rows of the deep crystal layer, just above the bedrock. */
+export function crystalLayer(height = WORLD_HEIGHT): { top: number; bottom: number } {
+  return { top: height - 26, bottom: height - 3 };
+}
+
+/**
+ * Seeds rare crystal ore into stone in the deep layer. Deterministic for a seed. Also used to
+ * upgrade worlds saved before crystals existed, so it only ever replaces untouched stone.
+ */
+export function addCrystals(world: World, seed: number): number {
+  const { top, bottom } = crystalLayer(world.height);
+  let placed = 0;
+  for (let y = top; y <= bottom; y++) {
+    for (let x = 1; x < world.width - 1; x++) {
+      const i = y * world.width + x;
+      if (world.fg[i] !== Block.Stone) continue;
+      if (noise2(x / 2.2, y / 2.2, seed ^ 0x3c6ef372) > 0.875 && hash2(x, y, seed ^ 0x0a5e5c7d) < 0.55) {
+        world.fg[i] = Block.CrystalOre;
+        placed++;
+      }
+    }
+  }
+  return placed;
+}
+
+/** Berry bushes on open grass, spaced out. Only placed where the tile above grass is empty air. */
+export function addBerryBushes(world: World, seed: number, avoidX = -100): number {
+  const rand = mulberry32(seed ^ 0x2b992ddf);
+  let last = -10;
+  let placed = 0;
+  for (let x = 2; x < world.width - 2; x++) {
+    const roll = rand();
+    if (x - last < 6 || roll > 0.16 || Math.abs(x - avoidX) <= 2) continue;
+    for (let y = 1; y < world.height - 1; y++) {
+      const id = world.fg[y * world.width + x];
+      if (id === Block.Air) continue;
+      if (id === Block.Grass && world.fg[(y - 1) * world.width + x] === Block.Air && world.bg[(y - 1) * world.width + x] === Block.Air) {
+        world.fg[(y - 1) * world.width + x] = Block.BerryBush;
+        placed++;
+        last = x;
+      }
+      break;
+    }
+  }
+  return placed;
 }
